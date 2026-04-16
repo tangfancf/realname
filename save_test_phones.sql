@@ -1,0 +1,11 @@
+CREATE DATABASE IF NOT EXISTS `realname` DEFAULT CHARACTER SET utf8mb4;
+USE `realname`;
+CREATE TABLE IF NOT EXISTS `test_phone_whitelist` (
+  id BIGINT PRIMARY KEY AUTO_INCREMENT,
+  phone VARCHAR(20) NOT NULL UNIQUE,
+  created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+INSERT IGNORE INTO `test_phone_whitelist` (phone) VALUES
+('13882624156'),
+('18482696553');
+SELECT id, phone, created_at FROM `test_phone_whitelist` ORDER BY id;
