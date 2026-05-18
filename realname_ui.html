@@ -1,0 +1,698 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>实名认证测试工具</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #f0f2f5;
+      color: #333;
+      min-height: 100vh;
+    }
+
+    /* ── 顶部导航 ── */
+    .topbar {
+      background: #1a2233;
+      height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      gap: 24px;
+      position: sticky;
+      top: 0;
+      z-index: 100;
+    }
+    .topbar .logo {
+      color: #ff6b35;
+      font-weight: 700;
+      font-size: 15px;
+      white-space: nowrap;
+      margin-right: 12px;
+    }
+    .topbar nav a {
+      color: #c8cdd8;
+      text-decoration: none;
+      font-size: 13px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      transition: color .2s;
+    }
+    .topbar nav a:hover, .topbar nav a.active {
+      color: #fff;
+    }
+    .topbar .spacer { flex: 1; }
+    .topbar .user {
+      color: #c8cdd8;
+      font-size: 13px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .topbar .user .avatar {
+      width: 28px; height: 28px;
+      border-radius: 50%;
+      background: #ff6b35;
+      display: flex; align-items: center; justify-content: center;
+      color: #fff; font-size: 12px; font-weight: 600;
+    }
+
+    /* ── 面包屑 ── */
+    .breadcrumb {
+      background: #fff;
+      border-bottom: 1px solid #e8eaed;
+      padding: 10px 24px;
+      font-size: 13px;
+      color: #999;
+    }
+    .breadcrumb span { color: #333; }
+
+    /* ── 主体布局 ── */
+    .layout {
+      display: flex;
+      min-height: calc(100vh - 48px - 37px);
+    }
+
+    /* ── 侧边栏 ── */
+    .sidebar {
+      width: 200px;
+      background: #fff;
+      border-right: 1px solid #e8eaed;
+      padding: 16px 0;
+      flex-shrink: 0;
+    }
+    .sidebar .menu-item {
+      padding: 10px 20px;
+      font-size: 13px;
+      color: #555;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      transition: background .15s;
+    }
+    .sidebar .menu-item:hover { background: #f5f7fa; color: #333; }
+    .sidebar .menu-item.active {
+      background: #fff0eb;
+      color: #ff6b35;
+      font-weight: 600;
+      border-right: 3px solid #ff6b35;
+    }
+    .sidebar .menu-icon { font-size: 15px; }
+
+    /* ── 内容区 ── */
+    .content {
+      flex: 1;
+      padding: 20px 24px;
+      overflow: auto;
+    }
+
+    /* ── 搜索/筛选栏 ── */
+    .filter-bar {
+      background: #fff;
+      border: 1px solid #e8eaed;
+      border-radius: 6px;
+      padding: 16px 20px;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .filter-bar label {
+      font-size: 13px;
+      color: #666;
+      white-space: nowrap;
+    }
+    .filter-bar input, .filter-bar select {
+      height: 32px;
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 0 10px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color .2s;
+      background: #fff;
+    }
+    .filter-bar input:focus, .filter-bar select:focus {
+      border-color: #ff6b35;
+    }
+    .filter-bar input { width: 200px; }
+    .btn {
+      height: 32px;
+      padding: 0 16px;
+      border-radius: 4px;
+      border: none;
+      font-size: 13px;
+      cursor: pointer;
+      transition: opacity .2s, background .2s;
+    }
+    .btn:hover { opacity: .85; }
+    .btn-primary { background: #ff6b35; color: #fff; }
+    .btn-default { background: #fff; color: #555; border: 1px solid #d9d9d9; }
+    .btn-default:hover { border-color: #ff6b35; color: #ff6b35; }
+    .btn-sm { height: 26px; padding: 0 10px; font-size: 12px; }
+
+    /* ── 功能标签页 ── */
+    .tabs {
+      display: flex;
+      gap: 0;
+      margin-bottom: 16px;
+      border-bottom: 2px solid #e8eaed;
+    }
+    .tab {
+      padding: 8px 18px;
+      font-size: 13px;
+      color: #666;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      margin-bottom: -2px;
+      transition: color .2s;
+    }
+    .tab:hover { color: #ff6b35; }
+    .tab.active { color: #ff6b35; border-bottom-color: #ff6b35; font-weight: 600; }
+
+    /* ── 卡片面板 ── */
+    .panel {
+      background: #fff;
+      border: 1px solid #e8eaed;
+      border-radius: 6px;
+      overflow: hidden;
+    }
+    .panel-header {
+      padding: 14px 20px;
+      border-bottom: 1px solid #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .panel-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #222;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .panel-title::before {
+      content: '';
+      display: inline-block;
+      width: 3px; height: 14px;
+      background: #ff6b35;
+      border-radius: 2px;
+    }
+    .panel-body { padding: 20px; }
+
+    /* ── 表单行 ── */
+    .form-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 16px;
+      margin-bottom: 16px;
+      align-items: flex-end;
+    }
+    .form-group {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+    .form-group label {
+      font-size: 12px;
+      color: #888;
+    }
+    .form-group input, .form-group select, .form-group textarea {
+      border: 1px solid #d9d9d9;
+      border-radius: 4px;
+      padding: 6px 10px;
+      font-size: 13px;
+      outline: none;
+      transition: border-color .2s;
+      background: #fff;
+    }
+    .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+      border-color: #ff6b35;
+    }
+    .form-group input { width: 220px; }
+    .form-group textarea { width: 460px; height: 80px; resize: vertical; }
+
+    /* ── 结果展示 ── */
+    .result-box {
+      background: #f8f9fb;
+      border: 1px solid #e8eaed;
+      border-radius: 4px;
+      padding: 14px 16px;
+      font-size: 13px;
+      min-height: 60px;
+      white-space: pre-wrap;
+      word-break: break-all;
+      color: #444;
+      font-family: "Menlo", "Consolas", monospace;
+      line-height: 1.6;
+    }
+    .result-box.success { border-left: 3px solid #52c41a; background: #f6ffed; }
+    .result-box.error   { border-left: 3px solid #ff4d4f; background: #fff2f0; }
+    .result-box.info    { border-left: 3px solid #1890ff; background: #e6f7ff; }
+
+    /* ── 状态标签 ── */
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .tag-orange { background: #fff0eb; color: #ff6b35; }
+    .tag-green  { background: #f6ffed; color: #52c41a; }
+    .tag-red    { background: #fff2f0; color: #ff4d4f; }
+    .tag-blue   { background: #e6f7ff; color: #1890ff; }
+    .tag-gray   { background: #f5f5f5; color: #999; }
+
+    /* ── 分割线 ── */
+    .divider {
+      border: none;
+      border-top: 1px solid #f0f0f0;
+      margin: 16px 0;
+    }
+
+    /* ── 加载动画 ── */
+    .loading {
+      display: inline-block;
+      width: 14px; height: 14px;
+      border: 2px solid #f0f0f0;
+      border-top-color: #ff6b35;
+      border-radius: 50%;
+      animation: spin .6s linear infinite;
+      vertical-align: middle;
+      margin-right: 6px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+
+    /* ── 隐藏面板 ── */
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── 提示文字 ── */
+    .hint { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+    /* ── 步骤说明 ── */
+    .steps {
+      display: flex;
+      gap: 0;
+      margin-bottom: 20px;
+    }
+    .step {
+      flex: 1;
+      text-align: center;
+      padding: 10px 8px;
+      font-size: 12px;
+      color: #999;
+      position: relative;
+    }
+    .step::after {
+      content: '→';
+      position: absolute;
+      right: -6px;
+      top: 50%;
+      transform: translateY(-50%);
+      color: #d9d9d9;
+      font-size: 14px;
+    }
+    .step:last-child::after { display: none; }
+    .step .step-num {
+      width: 24px; height: 24px;
+      border-radius: 50%;
+      background: #f0f0f0;
+      color: #999;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex; align-items: center; justify-content: center;
+      margin: 0 auto 6px;
+    }
+    .step.done .step-num { background: #ff6b35; color: #fff; }
+    .step.done { color: #ff6b35; }
+  </style>
+</head>
+<body>
+
+<!-- 顶部标题栏 -->
+<div class="topbar">
+  <div class="logo">🪪 实名认证测试工具</div>
+  <div class="spacer"></div>
+  <div class="user">
+    <div class="avatar">管</div>
+    <span>管理员</span>
+  </div>
+</div>
+
+<!-- 面包屑 -->
+<div class="breadcrumb">
+  🏠 首页 &nbsp;›&nbsp; <span>实名认证测试工具</span>
+</div>
+
+<!-- 主体 -->
+<div class="layout">
+
+  <!-- 侧边栏 -->
+  <div class="sidebar">
+    <div class="menu-item" onclick="switchMenu(this,'query')">
+      <span class="menu-icon">🔍</span> 用户查询
+    </div>
+    <div class="menu-item active" onclick="switchMenu(this,'realname')">
+      <span class="menu-icon">🪪</span> 实名认证
+    </div>
+    <div class="menu-item" onclick="switchMenu(this,'face')">
+      <span class="menu-icon">😊</span> 人脸认证
+    </div>
+    <div class="menu-item" onclick="switchMenu(this,'enterprise')">
+      <span class="menu-icon">🏢</span> 企业认证
+    </div>
+    <div class="menu-item" onclick="switchMenu(this,'two')">
+      <span class="menu-icon">✅</span> 二要素认证
+    </div>
+    <div class="menu-item" onclick="switchMenu(this,'whitelist')">
+      <span class="menu-icon">📋</span> 白名单校验
+    </div>
+  </div>
+
+  <!-- 内容区 -->
+  <div class="content">
+
+    <!-- ══════════ 用户查询 ══════════ -->
+    <div id="page-query" class="tab-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">用户信息查询</div>
+        </div>
+        <div class="panel-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>用户 ID</label>
+              <input id="q-userid" type="text" placeholder="请输入用户ID，如 25422622" />
+            </div>
+            <button class="btn btn-primary" onclick="doGetUserInfo()">查询手机号 Hash</button>
+            <button class="btn btn-default" onclick="doGetRealTel()">查询真实手机号</button>
+          </div>
+          <div class="hint">· 查询手机号 Hash：调用 getUserInfoByID(user_id)</div>
+          <div class="hint">· 查询真实手机号：调用 getRealTelByHash(user_id)（需先获取 Hash）</div>
+          <hr class="divider" />
+          <div id="result-query" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 实名认证 ══════════ -->
+    <div id="page-realname" class="tab-panel active">
+
+      <!-- 步骤说明 -->
+      <div class="steps">
+        <div class="step done" id="step1">
+          <div class="step-num">1</div>获取实名信息
+        </div>
+        <div class="step" id="step2">
+          <div class="step-num">2</div>提交实名认证
+        </div>
+        <div class="step" id="step3">
+          <div class="step-num">3</div>完成
+        </div>
+      </div>
+
+      <!-- 获取实名信息 -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-header">
+          <div class="panel-title">获取实名基础信息</div>
+          <span class="tag tag-blue">GetRealNameinfo</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>用户 ID</label>
+              <input id="rn-userid" type="text" placeholder="请输入用户ID" />
+            </div>
+            <button class="btn btn-primary" onclick="doGetRealNameInfo()">获取实名信息</button>
+          </div>
+          <div id="result-rn-info" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+
+      <!-- 身份证 Hash 解密 -->
+      <div class="panel" style="margin-bottom:16px">
+        <div class="panel-header">
+          <div class="panel-title">身份证 Hash 解密</div>
+          <span class="tag tag-orange">GetRealidCardNumber</span>
+        </div>
+        <div class="panel-body">
+          <div class="form-row">
+            <div class="form-group">
+              <label>身份证 Hash</label>
+              <input id="rn-idhash" type="text" placeholder="请输入身份证 Hash" style="width:320px" />
+            </div>
+            <button class="btn btn-primary" onclick="doGetIdCardNumber()">解密身份证号</button>
+          </div>
+          <div id="result-rn-idcard" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+
+      <!-- 提交实名认证 -->
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">提交实名认证</div>
+          <span class="tag tag-orange">updateRealNameinfo</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:#888;margin-bottom:14px">
+            将自动读取该用户上一次的认证信息并重新提交，仅限测试白名单用户。
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>用户 ID</label>
+              <input id="rn-submit-userid" type="text" placeholder="请输入用户ID" />
+            </div>
+            <button class="btn btn-primary" onclick="doUpdateRealName()">提交实名认证</button>
+          </div>
+          <div id="result-rn-submit" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 人脸认证 ══════════ -->
+    <div id="page-face" class="tab-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">人脸信息认证</div>
+          <span class="tag tag-green">updateFaceInfo</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:#888;margin-bottom:14px">
+            将自动先完成实名认证，再提交人脸图片，仅限测试白名单用户。
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>用户 ID</label>
+              <input id="face-userid" type="text" placeholder="请输入用户ID" />
+            </div>
+            <button class="btn btn-primary" onclick="doUpdateFace()">提交人脸认证</button>
+          </div>
+          <div id="result-face" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 企业认证 ══════════ -->
+    <div id="page-enterprise" class="tab-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">企业信息认证</div>
+          <span class="tag tag-blue">updateEnterpriseInfo</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:#888;margin-bottom:14px">
+            将依次完成实名 → 人脸 → 企业认证，仅限测试白名单用户。
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>用户 ID</label>
+              <input id="ent-userid" type="text" placeholder="请输入用户ID" />
+            </div>
+            <button class="btn btn-primary" onclick="doUpdateEnterprise()">提交企业认证</button>
+          </div>
+          <div id="result-enterprise" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 二要素认证 ══════════ -->
+    <div id="page-two" class="tab-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">二要素认证</div>
+          <span class="tag tag-orange">updateTwoElementRealNameinfo</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:#888;margin-bottom:14px">
+            通过姓名 + 身份证号进行二要素核验，仅限测试白名单用户。
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>用户 ID</label>
+              <input id="two-userid" type="text" placeholder="请输入用户ID" />
+            </div>
+            <div class="form-group">
+              <label>真实姓名</label>
+              <input id="two-name" type="text" placeholder="如：汤番" />
+            </div>
+            <div class="form-group">
+              <label>身份证号</label>
+              <input id="two-idcard" type="text" placeholder="18位身份证号" style="width:200px" />
+            </div>
+          </div>
+          <div class="form-row">
+            <button class="btn btn-primary" onclick="doTwoElement()">提交二要素认证</button>
+          </div>
+          <div id="result-two" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ══════════ 白名单校验 ══════════ -->
+    <div id="page-whitelist" class="tab-panel">
+      <div class="panel">
+        <div class="panel-header">
+          <div class="panel-title">测试白名单校验</div>
+          <span class="tag tag-gray">checkTelisallow</span>
+        </div>
+        <div class="panel-body">
+          <p style="font-size:13px;color:#888;margin-bottom:14px">
+            校验手机号是否在测试白名单中（当前白名单：13882624156、18482696553）。
+          </p>
+          <div class="form-row">
+            <div class="form-group">
+              <label>手机号</label>
+              <input id="wl-tel" type="text" placeholder="请输入手机号" />
+            </div>
+            <button class="btn btn-primary" onclick="doCheckWhitelist()">校验白名单</button>
+          </div>
+          <div id="result-whitelist" class="result-box info">结果将显示在此处…</div>
+        </div>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+</div><!-- /layout -->
+
+<script>
+  /* ── 侧边栏切换 ── */
+  const pageMap = {
+    query: 'page-query',
+    realname: 'page-realname',
+    face: 'page-face',
+    enterprise: 'page-enterprise',
+    two: 'page-two',
+    whitelist: 'page-whitelist'
+  };
+
+  function switchMenu(el, key) {
+    document.querySelectorAll('.sidebar .menu-item').forEach(i => i.classList.remove('active'));
+    el.classList.add('active');
+    Object.values(pageMap).forEach(id => {
+      const p = document.getElementById(id);
+      if (p) p.classList.remove('active');
+    });
+    const target = document.getElementById(pageMap[key]);
+    if (target) target.classList.add('active');
+  }
+
+  /* ── 通用：调用后端 Python API ── */
+  async function callAPI(endpoint, payload, resultId) {
+    const box = document.getElementById(resultId);
+    box.className = 'result-box';
+    box.innerHTML = '<span class="loading"></span> 请求中…';
+    try {
+      const res = await fetch('/api/' + endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload)
+      });
+      const data = await res.json();
+      box.className = data.success ? 'result-box success' : 'result-box error';
+      box.textContent = JSON.stringify(data, null, 2);
+    } catch (e) {
+      box.className = 'result-box error';
+      box.textContent = '请求失败：' + e.message + '\n\n提示：请先启动后端服务（python server.py）';
+    }
+  }
+
+  /* ── 各功能调用 ── */
+  function doGetUserInfo() {
+    const uid = document.getElementById('q-userid').value.trim();
+    if (!uid) return alert('请输入用户ID');
+    callAPI('getUserInfoByID', { user_id: uid }, 'result-query');
+  }
+
+  function doGetRealTel() {
+    const uid = document.getElementById('q-userid').value.trim();
+    if (!uid) return alert('请输入用户ID');
+    callAPI('getRealTelByHash', { user_id: uid }, 'result-query');
+  }
+
+  function doGetRealNameInfo() {
+    const uid = document.getElementById('rn-userid').value.trim();
+    if (!uid) return alert('请输入用户ID');
+    callAPI('GetRealNameinfo', { user_id: uid }, 'result-rn-info');
+  }
+
+  function doGetIdCardNumber() {
+    const hash = document.getElementById('rn-idhash').value.trim();
+    if (!hash) return alert('请输入身份证 Hash');
+    callAPI('GetRealidCardNumber', { idCardNumber: hash }, 'result-rn-idcard');
+  }
+
+  function doUpdateRealName() {
+    const uid = document.getElementById('rn-submit-userid').value.trim();
+    if (!uid) return alert('请输入用户ID');
+    // 更新步骤状态
+    document.getElementById('step2').classList.add('done');
+    callAPI('updateRealNameinfo', { user_id: uid }, 'result-rn-submit').then(() => {
+      document.getElementById('step3').classList.add('done');
+    });
+  }
+
+  function doUpdateFace() {
+    const uid = document.getElementById('face-userid').value.trim();
+    if (!uid) return alert('请输入用户ID');
+    callAPI('updateFaceInfo', { user_id: uid }, 'result-face');
+  }
+
+  function doUpdateEnterprise() {
+    const uid = document.getElementById('ent-userid').value.trim();
+    if (!uid) return alert('请输入用户ID');
+    callAPI('updateEnterpriseInfo', { user_id: uid }, 'result-enterprise');
+  }
+
+  function doTwoElement() {
+    const uid    = document.getElementById('two-userid').value.trim();
+    const name   = document.getElementById('two-name').value.trim();
+    const idcard = document.getElementById('two-idcard').value.trim();
+    if (!uid) return alert('请输入用户ID');
+    callAPI('updateTwoElementRealNameinfo', { user_id: uid, idCardName: name, idCardNumber: idcard }, 'result-two');
+  }
+
+  function doCheckWhitelist() {
+    const tel = document.getElementById('wl-tel').value.trim();
+    if (!tel) return alert('请输入手机号');
+    // 前端直接模拟（白名单固定）
+    const whitelist = ['13882624156', '18482696553'];
+    const box = document.getElementById('result-whitelist');
+    if (whitelist.includes(tel)) {
+      box.className = 'result-box success';
+      box.textContent = JSON.stringify({ success: true, result: "true", message: "手机号在测试白名单中 ✓" }, null, 2);
+    } else {
+      box.className = 'result-box error';
+      box.textContent = JSON.stringify({ success: false, result: "false", message: "手机号不在测试白名单中 ✗" }, null, 2);
+    }
+  }
+</script>
+</body>
+</html>
