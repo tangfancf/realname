@@ -23,7 +23,11 @@ def get_client():
     global _client
     if _client is None:
         print("初始化 realname 客户端并登录…")
-        _client = realname()
+        try:
+            _client = realname()
+        except Exception as e:
+            _client = None  # 登录失败时不缓存，下次请求可重试
+            raise RuntimeError(f"客户端初始化失败：{e}") from e
     return _client
 
 
